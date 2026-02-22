@@ -1,7 +1,9 @@
 import { useRouter } from "next/navigation";
+import useUserStore from "@/store/user";
 
 export default function useAuth() {
   const router = useRouter();
+  const setUser = useUserStore((state) => state.setUser);
 
   const login = async ({
     email,
@@ -24,8 +26,8 @@ export default function useAuth() {
       throw new Error(user.statusText || "Login failed");
     }
 
+    setUser(user.user);
     router.replace("/dashboard");
-    return user;
   };
 
   const logout = () => {
