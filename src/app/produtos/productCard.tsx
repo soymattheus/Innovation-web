@@ -11,6 +11,11 @@ type ProductCardProps = Product & {
   onToggleFavorite: () => void;
 };
 
+const brlFormatter = new Intl.NumberFormat("pt-BR", {
+  style: "currency",
+  currency: "BRL",
+});
+
 export default function ProductCard({
   nome,
   codigo,
@@ -56,12 +61,7 @@ export default function ProductCard({
 
         <div className="flex flex-col items-end text-sm">
           <p>a partir de</p>
-          <p className="text-xl font-bold">
-            R${" "}
-            {preco.toLocaleString("pt-BR", {
-              minimumFractionDigits: 2,
-            })}
-          </p>
+          <p className="text-xl font-bold">{brlFormatter.format(Number(preco))}</p>
           <p>gerado pela melhor oferta</p>
         </div>
       </div>

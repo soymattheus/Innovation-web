@@ -36,9 +36,17 @@ export async function GET(request: Request) {
     },
   );
   if (!response.ok) {
+    let errorMessage = "Failed to fetch products";
+    try {
+      const errorPayload = await response.json();
+      errorMessage = errorPayload?.message || errorPayload?.error || errorMessage;
+    } catch {
+      // keep default message when backend does not return JSON
+    }
+
     return NextResponse.json(
-      { error: "Failed to fetch products" },
-      { status: 500 },
+      { error: errorMessage },
+      { status: response.status },
     );
   }
 

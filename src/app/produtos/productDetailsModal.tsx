@@ -10,6 +10,11 @@ type ProductDetailsModalProps = {
   onClose: () => void;
 };
 
+const brlFormatter = new Intl.NumberFormat("pt-BR", {
+  style: "currency",
+  currency: "BRL",
+});
+
 export default function ProductDetailsModal({
   isOpen,
   product,
@@ -104,10 +109,7 @@ export default function ProductDetailsModal({
 
         <p className="mt-4 text-sm">{product.descricao}</p>
         <p className="mt-3 text-lg font-semibold">
-          R${" "}
-          {Number(product.preco).toLocaleString("pt-BR", {
-            minimumFractionDigits: 2,
-          })}
+          {brlFormatter.format(Number(product.preco))}
         </p>
 
         <div className="mt-6 flex justify-end">

@@ -6,6 +6,7 @@ import ProductCard from "./productCard";
 import ProductDetailsModal from "./productDetailsModal";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import useAuth from "@/hook/auth";
 
 type ProductsPage = {
   items: Product[];
@@ -14,10 +15,17 @@ type ProductsPage = {
 };
 
 type SortOption = "price-asc" | "price-desc" | "name-asc" | "name-desc";
+type ApiError = Error & { status?: number };
+
 const FAVORITES_STORAGE_KEY = "favorite-products";
+const PAGINATION_LIMIT = 5;
+const SKELETON_ITEMS = 5;
+const PAGINATION_SKELETON_ITEMS = 2;
 
 export default function Produtos() {
+  const { logout } = useAuth();
   const observerRef = useRef<IntersectionObserver | null>(null);
+  const handledUnauthorizedRef = useRef(false);
   const [sortBy, setSortBy] = useState<SortOption>("name-asc");
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [favoriteCodes, setFavoriteCodes] = useState<string[]>(() => {
@@ -49,18 +57,36 @@ export default function Produtos() {
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
+    isFetchNextPageError,
   } = useInfiniteQuery<ProductsPage>({
     queryKey: ["produtos"],
     initialPageParam: 1,
     queryFn: async ({ pageParam }) => {
-      const response = await fetch(`/api/produtos?page=${pageParam}&limit=5`);
+      const response = await fetch(
+        `/api/produtos?page=${pageParam}&limit=${PAGINATION_LIMIT}`,
+      );
       if (!response.ok) {
-        throw new Error("Falha ao buscar produtos");
+        const payload = await response.json().catch(() => null);
+        const queryError = new Error(
+          payload?.error || "Falha ao buscar produtos",
+        ) as ApiError;
+        queryError.status = response.status;
+        throw queryError;
       }
       return response.json();
     },
     getNextPageParam: (lastPage) => lastPage.nextPage,
   });
+
+  useEffect(() => {
+    const apiError = error as ApiError | null;
+    if (!apiError || apiError.status !== 401 || handledUnauthorizedRef.current) {
+      return;
+    }
+
+    handledUnauthorizedRef.current = true;
+    logout();
+  }, [error, logout]);
 
   const products = useMemo(
     () => data?.pages.flatMap((page) => page.items) ?? [],
@@ -138,7 +164,7 @@ export default function Produtos() {
       <main className="flex flex-col min-h-screen bg-white text-black">
         <Header />
         <section className=" w-full md:w-4/5 grid grid-cols-1 md:grid-cols-5 p-3 gap-3 mx-auto">
-          {Array.from({ length: 5 }).map((_, i) => (
+          {Array.from({ length: SKELETON_ITEMS }).map((_, i) => (
             <div key={i} className="flex flex-col gap-3">
               <div className="animate-pulse bg-gray-200 rounded-lg h-14" />
 
@@ -227,9 +253,28 @@ export default function Produtos() {
       <div ref={lastProductRef} className="h-12 w-full" />
 
       {isFetchingNextPage && (
-        <p className="text-center pb-6 text-sm text-gray-600">
-          Carregando mais produtos...
-        </p>
+        <section className="w-full md:w-4/5 grid grid-cols-1 md:grid-cols-5 p-3 gap-3 mx-auto">
+          {Array.from({ length: PAGINATION_SKELETON_ITEMS }).map((_, i) => (
+            <div key={i} className="flex flex-col gap-3">
+              <div className="animate-pulse bg-gray-200 rounded-lg h-14" />
+              <div className="animate-pulse bg-gray-200 rounded-lg h-90" />
+              <div className="animate-pulse bg-gray-200 rounded-lg h-14" />
+            </div>
+          ))}
+        </section>
+      )}
+
+      {isFetchNextPageError && (
+        <div className="flex flex-col items-center gap-2 pb-6">
+          <p className="text-sm text-red-600">Erro ao carregar mais produtos.</p>
+          <button
+            onClick={() => fetchNextPage()}
+            type="button"
+            className="bg-red-500 text-white py-2 px-4 rounded hover:bg-red-600 transition-colors"
+          >
+            Tentar novamente
+          </button>
+        </div>
       )}
 
       <ProductDetailsModal

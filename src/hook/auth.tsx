@@ -4,6 +4,7 @@ import useUserStore from "@/store/user";
 export default function useAuth() {
   const router = useRouter();
   const setUser = useUserStore((state) => state.setUser);
+  const clearUser = useUserStore((state) => state.clearUser);
 
   const login = async ({
     email,
@@ -31,7 +32,10 @@ export default function useAuth() {
   };
 
   const logout = () => {
-    // Implement logout logic, e.g., clear tokens, redirect, etc.
+    clearUser();
+    fetch("/api/auth/logout", { method: "POST" }).finally(() => {
+      router.replace("/login");
+    });
   };
 
   return { login, logout };
