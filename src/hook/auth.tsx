@@ -27,7 +27,7 @@ export default function useAuth() {
     }
 
     setUser(user.user);
-    router.replace("/dashboard");
+    router.replace("/produtos");
   };
 
   const logout = () => {

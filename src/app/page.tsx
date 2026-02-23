@@ -9,7 +9,7 @@ import { InputField, InputIcon, InputRoot } from "@/components/input";
 import Link from "next/link";
 import React from "react";
 import useAuth from "@/hook/auth";
-import { LockOpen, UserRound } from "lucide-react";
+import { FaUserAlt, FaUnlock } from "react-icons/fa";
 
 const loginSchema = z.object({
   email: z
@@ -51,7 +51,7 @@ export default function Home() {
           {/* user */}
           <InputRoot>
             <InputIcon>
-              <UserRound />
+              <FaUserAlt />
             </InputIcon>
 
             <InputField
@@ -64,7 +64,7 @@ export default function Home() {
           {/* password */}
           <InputRoot>
             <InputIcon>
-              <LockOpen />
+              <FaUnlock />
             </InputIcon>
 
             <InputField

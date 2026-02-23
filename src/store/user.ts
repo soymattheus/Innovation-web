@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { createJSONStorage, persist } from "zustand/middleware";
 
 export type User = {
   email: string;
@@ -16,16 +17,24 @@ type UserStore = {
   clearUser: () => void;
 };
 
-const useUserStore = create<UserStore>()((set) => ({
-  user: null,
-  isAuthenticated: false,
-  setUser: (user) => set({ user, isAuthenticated: true }),
-  updateUser: (payload) =>
-    set((state) => ({
-      user: state.user ? { ...state.user, ...payload } : null,
-      isAuthenticated: Boolean(state.user),
-    })),
-  clearUser: () => set({ user: null, isAuthenticated: false }),
-}));
+const useUserStore = create<UserStore>()(
+  persist(
+    (set) => ({
+      user: null,
+      isAuthenticated: false,
+      setUser: (user) => set({ user, isAuthenticated: true }),
+      updateUser: (payload) =>
+        set((state) => ({
+          user: state.user ? { ...state.user, ...payload } : null,
+          isAuthenticated: Boolean(state.user),
+        })),
+      clearUser: () => set({ user: null, isAuthenticated: false }),
+    }),
+    {
+      name: "user-store",
+      storage: createJSONStorage(() => localStorage),
+    }
+  )
+);
 
 export default useUserStore;
