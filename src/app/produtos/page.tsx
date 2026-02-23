@@ -3,6 +3,7 @@
 import { Product } from "@/types/product";
 import Header from "./header";
 import ProductCard from "./productCard";
+import ProductDetailsModal from "./productDetailsModal";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { useCallback, useMemo, useRef, useState } from "react";
 
@@ -17,6 +18,7 @@ type SortOption = "price-asc" | "price-desc" | "name-asc" | "name-desc";
 export default function Produtos() {
   const observerRef = useRef<IntersectionObserver | null>(null);
   const [sortBy, setSortBy] = useState<SortOption>("name-asc");
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
   const {
     data,
@@ -150,6 +152,7 @@ export default function Produtos() {
             descricao={product.descricao}
             preco={product.preco}
             imagem={product.imagem}
+            onOpenDetails={() => setSelectedProduct(product)}
           />
         ))}
       </section>
@@ -160,6 +163,12 @@ export default function Produtos() {
           Carregando mais produtos...
         </p>
       )}
+
+      <ProductDetailsModal
+        isOpen={Boolean(selectedProduct)}
+        product={selectedProduct}
+        onClose={() => setSelectedProduct(null)}
+      />
     </main>
   );
 }

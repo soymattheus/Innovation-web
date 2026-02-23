@@ -4,13 +4,18 @@ import Image from "next/image";
 import ProductColors from "./productColors";
 import { Product } from "@/types/product";
 
+type ProductCardProps = Product & {
+  onOpenDetails: () => void;
+};
+
 export default function ProductCard({
   nome,
   codigo,
   descricao,
   preco,
   imagem,
-}: Product) {
+  onOpenDetails,
+}: ProductCardProps) {
   return (
     <article className="flex flex-col text-black h-fit gap-3">
       <div>
@@ -42,7 +47,7 @@ export default function ProductCard({
       </div>
 
       <button
-        onClick={() => alert(codigo)}
+        onClick={onOpenDetails}
         type="button"
         className="bg-[#59BC04] p-2 w-full font-bold text-white rounded-sm"
       >
