@@ -14,6 +14,7 @@ const brlFormatter = new Intl.NumberFormat("pt-BR", {
   style: "currency",
   currency: "BRL",
 });
+const IMAGE_FALLBACK_SRC = "/product-placeholder.svg";
 
 export default function ProductDetailsModal({
   isOpen,
@@ -99,11 +100,20 @@ export default function ProductDetailsModal({
 
         <div className="mt-4 flex justify-center">
           <Image
-            src={product.imagem}
+            src={product.imagem || IMAGE_FALLBACK_SRC}
             alt={product.nome}
             width={220}
             height={220}
             className="rounded-md"
+            onError={(event) => {
+              const imageElement = event.currentTarget;
+              if (imageElement.dataset.fallbackApplied === "true") {
+                return;
+              }
+
+              imageElement.dataset.fallbackApplied = "true";
+              imageElement.src = IMAGE_FALLBACK_SRC;
+            }}
           />
         </div>
 

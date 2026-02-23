@@ -15,6 +15,7 @@ const brlFormatter = new Intl.NumberFormat("pt-BR", {
   style: "currency",
   currency: "BRL",
 });
+const IMAGE_FALLBACK_SRC = "/product-placeholder.svg";
 
 export default function ProductCard({
   nome,
@@ -51,7 +52,21 @@ export default function ProductCard({
           </button>
         </div>
 
-        <Image src={imagem} alt={nome} width={200} height={200} />
+        <Image
+          src={imagem || IMAGE_FALLBACK_SRC}
+          alt={nome}
+          width={200}
+          height={200}
+          onError={(event) => {
+            const imageElement = event.currentTarget;
+            if (imageElement.dataset.fallbackApplied === "true") {
+              return;
+            }
+
+            imageElement.dataset.fallbackApplied = "true";
+            imageElement.src = IMAGE_FALLBACK_SRC;
+          }}
+        />
 
         <p className="text-black text-sm h-14 line-clamp-2">{descricao}</p>
 
