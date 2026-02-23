@@ -84,7 +84,11 @@ export default function Produtos() {
 
   useEffect(() => {
     const apiError = error as ApiError | null;
-    if (!apiError || apiError.status !== 401 || handledUnauthorizedRef.current) {
+    if (
+      !apiError ||
+      apiError.status !== 401 ||
+      handledUnauthorizedRef.current
+    ) {
       return;
     }
 
@@ -154,7 +158,9 @@ export default function Produtos() {
       return sortedProducts;
     }
 
-    return sortedProducts.filter((product) => favoriteCodesSet.has(product.codigo));
+    return sortedProducts.filter((product) =>
+      favoriteCodesSet.has(product.codigo),
+    );
   }, [favoriteCodesSet, showFavoritesOnly, sortedProducts]);
 
   const toggleFavorite = useCallback((productCode: string) => {
@@ -299,7 +305,9 @@ export default function Produtos() {
 
       {isFetchNextPageError && (
         <div className="flex flex-col items-center gap-2 pb-6">
-          <p className="text-sm text-red-600">Erro ao carregar mais produtos.</p>
+          <p className="text-sm text-red-600">
+            Erro ao carregar mais produtos.
+          </p>
           <button
             onClick={() => fetchNextPage()}
             type="button"

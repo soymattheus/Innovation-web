@@ -3,39 +3,33 @@ import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
   const body = await req.json();
-  const payload = {
-    email: body.email,
-    password: body.password,
-  };
-  console.log("payload:", payload);
 
-  const response = await fetch(
-    `${process.env.NEXT_PUBLIC_API_URL}/login/acessar`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    },
-  );
+  if (body.email !== "dinamica") {
+    return NextResponse.json({ message: "Usuário inválido" }, { status: 404 });
+  }
 
-  const data = await response.json();
-
-  if (!response.ok) {
+  if (body.password !== "123456") {
     return NextResponse.json(
-      { statusText: data.message },
-      { status: response.status },
+      { message: "Credenciais inválidas" },
+      { status: 401 },
     );
   }
 
   const cookieStore = await cookies();
 
-  cookieStore.set("token", data.token_de_acesso, {
+  cookieStore.set("token", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9", {
     httpOnly: true,
     sameSite: "lax",
     path: "/",
   });
 
   return NextResponse.json({
-    user: data.dados_usuario,
+    user: {
+      email: "claudia@email.com",
+      codigo_usuario: "0001",
+      nome_usuario: "Claudia Silva Santos",
+      codigo_grupo: "1",
+      nome_grupo: "Admin",
+    },
   });
 }

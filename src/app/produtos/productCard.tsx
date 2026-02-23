@@ -30,7 +30,7 @@ export default function ProductCard({
   return (
     <article className="flex flex-col text-black h-fit gap-3">
       <div>
-        <h1 className="font-bold text-black text-center">{nome}</h1>
+        <h1 className="font-bold text-black text-center h-14">{nome}</h1>
         <p className="text-black text-center text-sm">{codigo}</p>
       </div>
 
@@ -76,7 +76,9 @@ export default function ProductCard({
 
         <div className="flex flex-col items-end text-sm">
           <p>a partir de</p>
-          <p className="text-xl font-bold">{brlFormatter.format(Number(preco))}</p>
+          <p className="text-xl font-bold">
+            {brlFormatter.format(Number(preco))}
+          </p>
           <p>gerado pela melhor oferta</p>
         </div>
       </div>

@@ -13,8 +13,8 @@ import { FaUserAlt, FaUnlock } from "react-icons/fa";
 
 const loginSchema = z.object({
   email: z
-    .email("Insira um email válido.")
-    .nonempty("O campo email é obrigatório."),
+    .string("Insira um usuário válido.")
+    .nonempty("O campo usuário é obrigatório."),
   password: z.string("Insira a sua senha.").min(6, {
     message: "O campo senha deve ter ao menos 6 caracteres..",
   }),
