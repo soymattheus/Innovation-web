@@ -5,7 +5,7 @@ import Header from "./header";
 import ProductCard from "./productCard";
 import ProductDetailsModal from "./productDetailsModal";
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type ProductsPage = {
   items: Product[];
@@ -14,11 +14,32 @@ type ProductsPage = {
 };
 
 type SortOption = "price-asc" | "price-desc" | "name-asc" | "name-desc";
+const FAVORITES_STORAGE_KEY = "favorite-products";
 
 export default function Produtos() {
   const observerRef = useRef<IntersectionObserver | null>(null);
   const [sortBy, setSortBy] = useState<SortOption>("name-asc");
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [favoriteCodes, setFavoriteCodes] = useState<string[]>(() => {
+    if (typeof window === "undefined") {
+      return [];
+    }
+
+    const saved = localStorage.getItem(FAVORITES_STORAGE_KEY);
+    if (!saved) {
+      return [];
+    }
+
+    try {
+      const parsed = JSON.parse(saved);
+      return Array.isArray(parsed)
+        ? parsed.filter((item) => typeof item === "string")
+        : [];
+    } catch {
+      return [];
+    }
+  });
+  const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
 
   const {
     data,
@@ -63,6 +84,33 @@ export default function Produtos() {
 
     return list.sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
   }, [products, sortBy]);
+
+  const favoriteCodesSet = useMemo(
+    () => new Set(favoriteCodes),
+    [favoriteCodes],
+  );
+
+  const visibleProducts = useMemo(() => {
+    if (!showFavoritesOnly) {
+      return sortedProducts;
+    }
+
+    return sortedProducts.filter((product) => favoriteCodesSet.has(product.codigo));
+  }, [favoriteCodesSet, showFavoritesOnly, sortedProducts]);
+
+  const toggleFavorite = useCallback((productCode: string) => {
+    setFavoriteCodes((current) => {
+      if (current.includes(productCode)) {
+        return current.filter((code) => code !== productCode);
+      }
+
+      return [...current, productCode];
+    });
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem(FAVORITES_STORAGE_KEY, JSON.stringify(favoriteCodes));
+  }, [favoriteCodes]);
 
   const lastProductRef = useCallback(
     (node: HTMLDivElement | null) => {
@@ -126,7 +174,20 @@ export default function Produtos() {
     <main className="flex flex-col min-h-screen bg-white text-black">
       <Header />
       <section className="w-full md:w-4/5 px-3 pt-4 mx-auto">
-        <div className="flex items-center justify-end gap-2">
+        <div className="flex items-center justify-end gap-3 flex-wrap">
+          <label
+            htmlFor="show-favorites"
+            className="text-sm font-medium flex items-center gap-2"
+          >
+            <input
+              id="show-favorites"
+              type="checkbox"
+              checked={showFavoritesOnly}
+              onChange={(event) => setShowFavoritesOnly(event.target.checked)}
+            />
+            Mostrar apenas favoritos
+          </label>
+
           <label htmlFor="sort-products" className="text-sm font-medium">
             Ordenar por:
           </label>
@@ -144,7 +205,7 @@ export default function Produtos() {
         </div>
       </section>
       <section className=" w-full md:w-4/5 grid grid-cols-1 md:grid-cols-5 p-3 gap-3 mx-auto">
-        {sortedProducts.map((product: Product) => (
+        {visibleProducts.map((product: Product) => (
           <ProductCard
             key={product.codigo}
             nome={product.nome}
@@ -153,9 +214,16 @@ export default function Produtos() {
             preco={product.preco}
             imagem={product.imagem}
             onOpenDetails={() => setSelectedProduct(product)}
+            isFavorite={favoriteCodesSet.has(product.codigo)}
+            onToggleFavorite={() => toggleFavorite(product.codigo)}
           />
         ))}
       </section>
+      {showFavoritesOnly && visibleProducts.length === 0 && (
+        <p className="text-center text-gray-600 pb-6">
+          Nenhum produto favorito encontrado.
+        </p>
+      )}
       <div ref={lastProductRef} className="h-12 w-full" />
 
       {isFetchingNextPage && (
