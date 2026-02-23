@@ -7,6 +7,7 @@ import ProductDetailsModal from "./productDetailsModal";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import useAuth from "@/hook/auth";
+import { useToast } from "@/components/toast/toastProvider";
 
 type ProductsPage = {
   items: Product[];
@@ -24,8 +25,11 @@ const PAGINATION_SKELETON_ITEMS = 2;
 
 export default function Produtos() {
   const { logout } = useAuth();
+  const { showToast } = useToast();
   const observerRef = useRef<IntersectionObserver | null>(null);
   const handledUnauthorizedRef = useRef(false);
+  const lastToastErrorRef = useRef<string | null>(null);
+  const nextPageErrorToastShownRef = useRef(false);
   const [sortBy, setSortBy] = useState<SortOption>("name-asc");
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [favoriteCodes, setFavoriteCodes] = useState<string[]>(() => {
@@ -87,6 +91,35 @@ export default function Produtos() {
     handledUnauthorizedRef.current = true;
     logout();
   }, [error, logout]);
+
+  useEffect(() => {
+    const apiError = error as ApiError | null;
+    if (!apiError || apiError.status === 401) {
+      return;
+    }
+
+    const message = apiError.message || "Erro ao carregar produtos";
+    if (lastToastErrorRef.current === message) {
+      return;
+    }
+
+    lastToastErrorRef.current = message;
+    showToast(message, "error");
+  }, [error, showToast]);
+
+  useEffect(() => {
+    if (!isFetchNextPageError) {
+      nextPageErrorToastShownRef.current = false;
+      return;
+    }
+
+    if (nextPageErrorToastShownRef.current) {
+      return;
+    }
+
+    nextPageErrorToastShownRef.current = true;
+    showToast("Erro ao carregar mais produtos.", "error");
+  }, [isFetchNextPageError, showToast]);
 
   const products = useMemo(
     () => data?.pages.flatMap((page) => page.items) ?? [],

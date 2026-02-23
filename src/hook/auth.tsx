@@ -1,8 +1,10 @@
 import { useRouter } from "next/navigation";
 import useUserStore from "@/store/user";
+import { useToast } from "@/components/toast/toastProvider";
 
 export default function useAuth() {
   const router = useRouter();
+  const { showToast } = useToast();
   const setUser = useUserStore((state) => state.setUser);
   const clearUser = useUserStore((state) => state.clearUser);
 
@@ -13,29 +15,48 @@ export default function useAuth() {
     email: string;
     password: string;
   }) => {
-    const res = await fetch("/api/auth/login", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ email, password }),
-    });
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+      });
 
-    const user = await res.json();
+      const user = await res.json();
 
-    if (!res.ok) {
-      throw new Error(user.statusText || "Login failed");
+      if (!res.ok) {
+        const message = user.statusText || "Erro ao realizar login";
+        showToast(message, "error");
+        return;
+      }
+
+      setUser(user.user);
+      router.replace("/produtos");
+    } catch (error) {
+      if (error instanceof Error) {
+        showToast("Erro de conexão ao tentar fazer login.", "error");
+      }
+
+      showToast("Erro inesperado ao tentar fazer login.", "error");
     }
-
-    setUser(user.user);
-    router.replace("/produtos");
   };
 
   const logout = () => {
     clearUser();
-    fetch("/api/auth/logout", { method: "POST" }).finally(() => {
-      router.replace("/login");
-    });
+    fetch("/api/auth/logout", { method: "POST" })
+      .then((response) => {
+        if (!response.ok) {
+          showToast("Não foi possível finalizar a sessão.", "error");
+        }
+      })
+      .catch(() => {
+        showToast("Erro ao encerrar sessão.", "error");
+      })
+      .finally(() => {
+        router.replace("/login");
+      });
   };
 
   return { login, logout };
