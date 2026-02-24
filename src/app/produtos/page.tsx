@@ -1,27 +1,30 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { Product } from "@/types/product";
 import Header from "./header";
 import ProductCard from "./productCard";
-import ProductDetailsModal from "./productDetailsModal";
+import ProductsToolbar from "./productsToolbar";
+import ProductsSkeletonGrid from "./productsSkeletonGrid";
+import ProductsErrorState from "./productsErrorState";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import useAuth from "@/hook/auth";
 import { useToast } from "@/components/toast/toastProvider";
+import { ApiError, ProductsPage, SortOption } from "./products.types";
+import {
+  FAVORITES_STORAGE_KEY,
+  PAGINATION_LIMIT,
+  PAGINATION_SKELETON_ITEMS,
+  SKELETON_ITEMS,
+  parseFavoriteCodes,
+  sortProducts,
+} from "./products.utils";
 
-type ProductsPage = {
-  items: Product[];
-  nextPage: number | null;
-  hasMore: boolean;
-};
-
-type SortOption = "price-asc" | "price-desc" | "name-asc" | "name-desc";
-type ApiError = Error & { status?: number };
-
-const FAVORITES_STORAGE_KEY = "favorite-products";
-const PAGINATION_LIMIT = 5;
-const SKELETON_ITEMS = 5;
-const PAGINATION_SKELETON_ITEMS = 2;
+const ProductDetailsModal = dynamic(() => import("./productDetailsModal"), {
+  ssr: false,
+  loading: () => null,
+});
 
 export default function Produtos() {
   const { logout } = useAuth();
@@ -37,19 +40,7 @@ export default function Produtos() {
       return [];
     }
 
-    const saved = localStorage.getItem(FAVORITES_STORAGE_KEY);
-    if (!saved) {
-      return [];
-    }
-
-    try {
-      const parsed = JSON.parse(saved);
-      return Array.isArray(parsed)
-        ? parsed.filter((item) => typeof item === "string")
-        : [];
-    } catch {
-      return [];
-    }
+    return parseFavoriteCodes(localStorage.getItem(FAVORITES_STORAGE_KEY));
   });
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
 
@@ -130,23 +121,10 @@ export default function Produtos() {
     [data],
   );
 
-  const sortedProducts = useMemo(() => {
-    const list = [...products];
-
-    if (sortBy === "price-asc") {
-      return list.sort((a, b) => Number(a.preco) - Number(b.preco));
-    }
-
-    if (sortBy === "price-desc") {
-      return list.sort((a, b) => Number(b.preco) - Number(a.preco));
-    }
-
-    if (sortBy === "name-desc") {
-      return list.sort((a, b) => b.nome.localeCompare(a.nome, "pt-BR"));
-    }
-
-    return list.sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
-  }, [products, sortBy]);
+  const sortedProducts = useMemo(
+    () => sortProducts(products, sortBy),
+    [products, sortBy],
+  );
 
   const favoriteCodesSet = useMemo(
     () => new Set(favoriteCodes),
@@ -197,22 +175,15 @@ export default function Produtos() {
     },
     [fetchNextPage, hasNextPage, isFetchingNextPage, isPending],
   );
+  const retryProducts = useCallback(() => {
+    void refetch();
+  }, [refetch]);
 
   if (isPending)
     return (
       <main className="flex flex-col min-h-screen bg-white text-black">
         <Header />
-        <section className=" w-full md:w-4/5 grid grid-cols-1 md:grid-cols-5 p-3 gap-3 mx-auto">
-          {Array.from({ length: SKELETON_ITEMS }).map((_, i) => (
-            <div key={i} className="flex flex-col gap-3">
-              <div className="animate-pulse bg-gray-200 rounded-lg h-14" />
-
-              <div className="animate-pulse bg-gray-200 rounded-lg h-90" />
-
-              <div className="animate-pulse bg-gray-200 rounded-lg h-14" />
-            </div>
-          ))}
-        </section>
+        <ProductsSkeletonGrid items={SKELETON_ITEMS} />
       </main>
     );
 
@@ -220,55 +191,23 @@ export default function Produtos() {
     return (
       <main className="flex flex-col min-h-screen bg-white text-black">
         <Header />
-        <section className="flex flex-col w-full">
-          <h1 className="text-2xl font-bold text-center mt-10">
-            Erro ao carregar produtos
-          </h1>
-          <button
-            onClick={() => refetch()}
-            type="button"
-            className="bg-red-500 text-white py-2 px-4 rounded hover:bg-red-600 transition-colors mx-auto mt-4"
-          >
-            Tentar novamente
-          </button>
-        </section>
+        <ProductsErrorState
+          buttonLabel="Tentar novamente"
+          onRetry={retryProducts}
+          className="flex flex-col w-full"
+        />
       </main>
     );
 
   return (
     <main className="flex flex-col min-h-screen bg-white text-black">
       <Header />
-      <section className="w-full md:w-4/5 px-3 pt-4 mx-auto">
-        <div className="flex items-center justify-end gap-3 flex-wrap">
-          <label
-            htmlFor="show-favorites"
-            className="text-sm font-medium flex items-center gap-2"
-          >
-            <input
-              id="show-favorites"
-              type="checkbox"
-              checked={showFavoritesOnly}
-              onChange={(event) => setShowFavoritesOnly(event.target.checked)}
-            />
-            Mostrar apenas favoritos
-          </label>
-
-          <label htmlFor="sort-products" className="text-sm font-medium">
-            Ordenar por:
-          </label>
-          <select
-            id="sort-products"
-            value={sortBy}
-            onChange={(event) => setSortBy(event.target.value as SortOption)}
-            className="border border-gray-300 rounded-md px-2 py-1 text-sm"
-          >
-            <option value="name-asc">Nome (A → Z)</option>
-            <option value="name-desc">Nome (Z → A)</option>
-            <option value="price-asc">Preço (menor → maior)</option>
-            <option value="price-desc">Preço (maior → menor)</option>
-          </select>
-        </div>
-      </section>
+      <ProductsToolbar
+        showFavoritesOnly={showFavoritesOnly}
+        sortBy={sortBy}
+        onSortChange={setSortBy}
+        onShowFavoritesOnlyChange={setShowFavoritesOnly}
+      />
       <section className=" w-full md:w-4/5 grid grid-cols-1 md:grid-cols-5 p-3 gap-3 mx-auto">
         {visibleProducts.map((product: Product) => (
           <ProductCard
@@ -289,18 +228,11 @@ export default function Produtos() {
           Nenhum produto favorito encontrado.
         </p>
       )}
+
       <div ref={lastProductRef} className="h-12 w-full" />
 
       {isFetchingNextPage && (
-        <section className="w-full md:w-4/5 grid grid-cols-1 md:grid-cols-5 p-3 gap-3 mx-auto">
-          {Array.from({ length: PAGINATION_SKELETON_ITEMS }).map((_, i) => (
-            <div key={i} className="flex flex-col gap-3">
-              <div className="animate-pulse bg-gray-200 rounded-lg h-14" />
-              <div className="animate-pulse bg-gray-200 rounded-lg h-90" />
-              <div className="animate-pulse bg-gray-200 rounded-lg h-14" />
-            </div>
-          ))}
-        </section>
+        <ProductsSkeletonGrid items={PAGINATION_SKELETON_ITEMS} />
       )}
 
       {isFetchNextPageError && (
@@ -309,7 +241,7 @@ export default function Produtos() {
             Erro ao carregar mais produtos.
           </p>
           <button
-            onClick={() => fetchNextPage()}
+            onClick={retryProducts}
             type="button"
             className="bg-red-500 text-white py-2 px-4 rounded hover:bg-red-600 transition-colors"
           >
