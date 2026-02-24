@@ -7,7 +7,7 @@ interface ButtonProps extends ComponentProps<"button"> {
 export function Button(props: ButtonProps) {
   return (
     <button
-      className="font-medium text-gray-800 bg-white py-2 px-8 h-14 rounded-4xl"
+      className="font-medium text-gray-800 bg-white py-2 px-8 h-14 rounded-4xl disabled:bg-gray-200"
       {...props}
     >
       {props.children}

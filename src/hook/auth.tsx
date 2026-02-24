@@ -1,12 +1,14 @@
 import { useRouter } from "next/navigation";
 import useUserStore from "@/store/user";
 import { useToast } from "@/components/toast/toastProvider";
+import React from "react";
 
 export default function useAuth() {
   const router = useRouter();
   const { showToast } = useToast();
   const setUser = useUserStore((state) => state.setUser);
   const clearUser = useUserStore((state) => state.clearUser);
+  const [isLoading, setIsLoading] = React.useState(false);
 
   const login = async ({
     email,
@@ -16,6 +18,7 @@ export default function useAuth() {
     password: string;
   }) => {
     try {
+      setIsLoading(true);
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: {
@@ -27,6 +30,7 @@ export default function useAuth() {
       const user = await res.json();
 
       if (!res.ok) {
+        setIsLoading(false);
         const message = user.statusText || "Erro ao realizar login";
         showToast(message, "error");
         return;
@@ -35,6 +39,7 @@ export default function useAuth() {
       setUser(user.user);
       router.replace("/produtos");
     } catch (error) {
+      setIsLoading(false);
       if (error instanceof Error) {
         showToast("Erro de conexão ao tentar fazer login.", "error");
       }
@@ -59,5 +64,5 @@ export default function useAuth() {
       });
   };
 
-  return { login, logout };
+  return { login, logout, isLoading };
 }

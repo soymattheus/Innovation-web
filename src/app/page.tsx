@@ -23,7 +23,7 @@ const loginSchema = z.object({
 type LoginSchema = z.infer<typeof loginSchema>;
 
 export default function Home() {
-  const { login } = useAuth();
+  const { login, isLoading } = useAuth();
   const [checked, setChecked] = React.useState(false);
   const {
     register,
@@ -39,13 +39,13 @@ export default function Home() {
 
   return (
     <main className="flex flex-col min-h-screen w-full px-10 py-4 gap-6 bg-[#1e1e1e] text-white items-center justify-center">
-      <h1 className="text-4xl font-bold text-[#8cc726] text-center">
+      <h1 className="text-4xl font-bold text-[#59BC04] text-center">
         Bem-vindo a Innovatrion Brindes
       </h1>
 
       <form
         onSubmit={handleSubmit(onLogin)}
-        className="w-full md:w-3/6 bg-[#8cc726] rounded-lg shadow-md py-15 px-8"
+        className="w-full md:w-3/6 bg-[#59BC04] rounded-lg shadow-md py-15 px-8"
       >
         <div className="flex flex-col items-center w-full md:w-5/6 gap-3 mx-auto">
           {/* user */}
@@ -87,7 +87,9 @@ export default function Home() {
             </div>
           </div>
 
-          <Button type="submit">Login</Button>
+          <Button disabled={isLoading} type="submit">
+            Login
+          </Button>
         </div>
       </form>
     </main>
