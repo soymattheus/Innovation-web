@@ -30,12 +30,14 @@ export default function ProductCard({
   return (
     <article className="flex flex-col text-black h-fit gap-3">
       <div>
-        <h1 className="font-bold text-black text-center h-14">{nome}</h1>
+        <h1 className="font-bold text-black text-center h-13 line-clamp-2">
+          {nome}
+        </h1>
         <p className="text-black text-center text-sm">{codigo}</p>
       </div>
 
-      <div className="flex flex-col border border-gray-400 rounded-sm items-center justify-center p-3">
-        <div className="flex items-center justify-between w-full">
+      <div className="flex flex-col border border-gray-400 rounded-sm items-center justify-center py-3">
+        <div className="flex items-center justify-between w-full px-3">
           <p className="text-blue-500 font-bold">EXCLUSIVO!</p>
           <button
             type="button"
@@ -57,6 +59,7 @@ export default function ProductCard({
           alt={nome}
           width={200}
           height={200}
+          className="w-full -p-3"
           onError={(event) => {
             const imageElement = event.currentTarget;
             if (imageElement.dataset.fallbackApplied === "true") {
@@ -68,18 +71,20 @@ export default function ProductCard({
           }}
         />
 
-        <p className="text-black text-sm h-14 line-clamp-2">{descricao}</p>
+        <div className="px-3">
+          <p className="text-black text-sm h-9 line-clamp-2">{descricao}</p>
 
-        <p className="w-full text-sm text-start mt-3">Cores:</p>
+          <p className="w-full text-sm text-start mt-3">Cores:</p>
 
-        <ProductColors />
+          <ProductColors />
 
-        <div className="flex flex-col items-end text-sm">
-          <p>a partir de</p>
-          <p className="text-xl font-bold">
-            {brlFormatter.format(Number(preco))}
-          </p>
-          <p>gerado pela melhor oferta</p>
+          <div className="flex flex-col items-end text-sm">
+            <p>a partir de</p>
+            <p className="text-xl font-bold">
+              {brlFormatter.format(Number(preco))}
+            </p>
+            <p>gerado pela melhor oferta</p>
+          </div>
         </div>
       </div>
 

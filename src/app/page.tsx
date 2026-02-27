@@ -15,8 +15,8 @@ const loginSchema = z.object({
   email: z
     .string("Insira um usuário válido.")
     .nonempty("O campo usuário é obrigatório."),
-  password: z.string("Insira a sua senha.").min(6, {
-    message: "O campo senha deve ter ao menos 6 caracteres..",
+  password: z.string("Insira a sua senha.").min(3, {
+    message: "O campo senha deve ter ao menos 3 caracteres..",
   }),
 });
 
@@ -25,10 +25,7 @@ type LoginSchema = z.infer<typeof loginSchema>;
 export default function Home() {
   const { login, isLoading } = useAuth();
   const [checked, setChecked] = React.useState(false);
-  const {
-    register,
-    handleSubmit,
-  } = useForm<LoginSchema>({
+  const { register, handleSubmit } = useForm<LoginSchema>({
     resolver: zodResolver(loginSchema),
   });
 

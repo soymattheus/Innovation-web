@@ -4,32 +4,42 @@ import { NextResponse } from "next/server";
 export async function POST(req: Request) {
   const body = await req.json();
 
-  if (body.email !== "dinamica") {
-    return NextResponse.json({ message: "Usuário inválido" }, { status: 404 });
+  const res = await fetch(
+    " https://apihomolog.innovationbrindes.com.br/api/innova-dinamica/login/acessar",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        email: body.email,
+        senha: body.password,
+      }),
+    },
+  );
+
+  if (!res.ok) {
+    return NextResponse.json(
+      { message: "Erro ao fazer login" },
+      { status: res.status },
+    );
   }
 
-  if (body.password !== "123456") {
-    return NextResponse.json(
-      { message: "Credenciais inválidas" },
-      { status: 401 },
-    );
+  const response = await res.json();
+
+  if (!response.status) {
+    return NextResponse.json({ message: response.message }, { status: 401 });
   }
 
   const cookieStore = await cookies();
 
-  cookieStore.set("token", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9", {
+  cookieStore.set("token", response.token_de_acesso, {
     httpOnly: true,
     sameSite: "lax",
     path: "/",
   });
 
   return NextResponse.json({
-    user: {
-      email: "claudia@email.com",
-      codigo_usuario: "0001",
-      nome_usuario: "Claudia Silva Santos",
-      codigo_grupo: "1",
-      nome_grupo: "Admin",
-    },
+    user: response.dados_usuario,
   });
 }
