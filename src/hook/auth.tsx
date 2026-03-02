@@ -6,6 +6,7 @@ import React from "react";
 type LoginPayload = {
   email: string;
   password: string;
+  rememberMe?: boolean;
 };
 
 export default function useAuth() {
@@ -15,7 +16,7 @@ export default function useAuth() {
   const clearUser = useUserStore((state) => state.clearUser);
   const [isLoading, setIsLoading] = React.useState(false);
 
-  const login = async ({ email, password }: LoginPayload) => {
+  const login = async ({ email, password, rememberMe = false }: LoginPayload) => {
     try {
       setIsLoading(true);
       const res = await fetch("/api/auth/login", {
@@ -23,7 +24,7 @@ export default function useAuth() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password, rememberMe }),
       });
 
       const user = await res.json();

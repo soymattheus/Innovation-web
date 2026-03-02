@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
   const body = await req.json();
+  const rememberMe = Boolean(body.rememberMe);
 
   const res = await fetch(
     " https://apihomolog.innovationbrindes.com.br/api/innova-dinamica/login/acessar",
@@ -37,6 +38,7 @@ export async function POST(req: Request) {
     httpOnly: true,
     sameSite: "lax",
     path: "/",
+    ...(rememberMe ? { maxAge: 60 * 60 * 24 * 30 } : {}),
   });
 
   return NextResponse.json({

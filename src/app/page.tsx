@@ -24,13 +24,16 @@ type LoginSchema = z.infer<typeof loginSchema>;
 
 export default function Home() {
   const { login, isLoading } = useAuth();
-  const [checked, setChecked] = React.useState(false);
+  const [rememberMe, setRememberMe] = React.useState(false);
   const { register, handleSubmit } = useForm<LoginSchema>({
     resolver: zodResolver(loginSchema),
   });
 
   async function onLogin(payload: LoginSchema) {
-    await login(payload);
+    await login({
+      ...payload,
+      rememberMe,
+    });
   }
 
   return (
@@ -74,8 +77,8 @@ export default function Home() {
           <div className="flex flex-col md:flex-row w-full gap-3 justify-center md:justify-between items-center">
             <Checkbox
               label="Manter logado"
-              checked={checked}
-              onChange={(checked) => setChecked(checked)}
+              checked={rememberMe}
+              onChange={(checked) => setRememberMe(checked)}
             />
 
             <div className="flex flex-row gap-3">
