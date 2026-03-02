@@ -26,6 +26,20 @@ const ProductDetailsModal = dynamic(() => import("./productDetailsModal"), {
   loading: () => null,
 });
 
+function useDebouncedValue<T>(value: T, delay = 400): T {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => clearTimeout(timeoutId);
+  }, [delay, value]);
+
+  return debouncedValue;
+}
+
 export default function Produtos() {
   const { logout } = useAuth();
   const { showToast } = useToast();
@@ -35,6 +49,8 @@ export default function Produtos() {
   const nextPageErrorToastShownRef = useRef(false);
   const [sortBy, setSortBy] = useState<SortOption>("name-asc");
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [searchName, setSearchName] = useState("");
+  const [searchCode, setSearchCode] = useState("");
   const [favoriteCodes, setFavoriteCodes] = useState<string[]>(() => {
     if (typeof window === "undefined") {
       return [];
@@ -43,6 +59,9 @@ export default function Produtos() {
     return parseFavoriteCodes(localStorage.getItem(FAVORITES_STORAGE_KEY));
   });
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
+
+  const debouncedSearchName = useDebouncedValue(searchName, 400).trim();
+  const debouncedSearchCode = useDebouncedValue(searchCode, 400).trim();
 
   const {
     data,
@@ -54,12 +73,23 @@ export default function Produtos() {
     isFetchingNextPage,
     isFetchNextPageError,
   } = useInfiniteQuery<ProductsPage>({
-    queryKey: ["produtos"],
+    queryKey: ["produtos", debouncedSearchName, debouncedSearchCode],
     initialPageParam: 1,
     queryFn: async ({ pageParam }) => {
       const response = await fetch(
         `/api/produtos?page=${pageParam}&limit=${PAGINATION_LIMIT}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            nome: debouncedSearchName || undefined,
+            codigo: debouncedSearchCode || undefined,
+          }),
+        },
       );
+
       if (!response.ok) {
         const payload = await response.json().catch(() => null);
         const queryError = new Error(
@@ -141,6 +171,24 @@ export default function Produtos() {
     );
   }, [favoriteCodesSet, showFavoritesOnly, sortedProducts]);
 
+  const hasActiveSearch = Boolean(debouncedSearchName || debouncedSearchCode);
+
+  const emptyMessage = useMemo(() => {
+    if (showFavoritesOnly && hasActiveSearch) {
+      return "Nenhum produto favorito encontrado para os filtros informados.";
+    }
+
+    if (showFavoritesOnly) {
+      return "Nenhum produto favorito encontrado.";
+    }
+
+    if (hasActiveSearch) {
+      return "Nenhum produto encontrado para os filtros informados.";
+    }
+
+    return "Nenhum produto encontrado.";
+  }, [hasActiveSearch, showFavoritesOnly]);
+
   const toggleFavorite = useCallback((productCode: string) => {
     setFavoriteCodes((current) => {
       if (current.includes(productCode)) {
@@ -203,8 +251,12 @@ export default function Produtos() {
     <main className="flex flex-col min-h-screen bg-white text-black">
       <Header />
       <ProductsToolbar
+        searchName={searchName}
+        searchCode={searchCode}
         showFavoritesOnly={showFavoritesOnly}
         sortBy={sortBy}
+        onSearchNameChange={setSearchName}
+        onSearchCodeChange={setSearchCode}
         onSortChange={setSortBy}
         onShowFavoritesOnlyChange={setShowFavoritesOnly}
       />
@@ -223,10 +275,8 @@ export default function Produtos() {
           />
         ))}
       </section>
-      {showFavoritesOnly && visibleProducts.length === 0 && (
-        <p className="text-center text-gray-600 pb-6">
-          Nenhum produto favorito encontrado.
-        </p>
+      {visibleProducts.length === 0 && !isFetchingNextPage && (
+        <p className="text-center text-gray-600 pb-6">{emptyMessage}</p>
       )}
 
       <div ref={lastProductRef} className="h-12 w-full" />
