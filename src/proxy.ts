@@ -3,14 +3,19 @@ import type { NextRequest } from "next/server";
 
 export function proxy(request: NextRequest) {
   const token = request.cookies.get("token")?.value;
+  const { pathname } = request.nextUrl;
 
-  if (!token) {
-    return NextResponse.redirect(new URL("/login", request.url));
+  if (pathname.startsWith("/produtos") && !token) {
+    return NextResponse.redirect(new URL("/", request.url));
+  }
+
+  if (pathname === "/" && token) {
+    return NextResponse.redirect(new URL("/produtos", request.url));
   }
 
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/produtos/:path*"],
+  matcher: ["/produtos", "/"],
 };
